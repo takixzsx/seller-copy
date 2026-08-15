@@ -57,9 +57,9 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <span className="text-lg font-bold text-primary">셀러카피</span>
           <div className="flex items-center gap-6 text-sm text-muted">
-            <a href="#features" className="hover:text-foreground transition">기능</a>
-            <a href="#how" className="hover:text-foreground transition">사용법</a>
-            <a href="#pricing" className="hover:text-foreground transition">요금</a>
+            <a href="#features" className="hidden sm:block hover:text-foreground transition">기능</a>
+            <a href="#how" className="hidden sm:block hover:text-foreground transition">사용법</a>
+            <a href="#pricing" className="hidden sm:block hover:text-foreground transition">요금</a>
             <a href="/generate" className="px-4 py-1.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition">시작하기</a>
           </div>
         </div>
