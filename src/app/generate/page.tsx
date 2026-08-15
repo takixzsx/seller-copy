@@ -88,11 +88,26 @@ export default function GeneratePage() {
   );
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
     setUsageCount(getUsageCount());
     setHistory(getHistory());
   }, []);
+
+  // 생성에 15~20초가 걸리므로 경과 시간과 단계를 보여줘 이탈을 줄인다.
+  useEffect(() => {
+    if (!loading) {
+      setElapsed(0);
+      return;
+    }
+    const started = Date.now();
+    const id = setInterval(
+      () => setElapsed(Math.floor((Date.now() - started) / 1000)),
+      1000
+    );
+    return () => clearInterval(id);
+  }, [loading]);
 
   const remaining = FREE_LIMIT - usageCount;
 
@@ -373,9 +388,21 @@ export default function GeneratePage() {
               <div className="flex flex-col items-center justify-center h-full text-muted text-sm border border-dashed border-border rounded-xl p-12 min-h-[400px]">
                 <Spinner className="h-10 w-10 text-primary mb-4" />
                 <p className="font-medium text-foreground">
-                  AI가 카피를 생성하고 있습니다
+                  {elapsed < 3
+                    ? "상품 정보를 분석하고 있습니다"
+                    : elapsed < 7
+                      ? "상세페이지 카피를 쓰고 있습니다"
+                      : "블로그 리뷰와 인스타 캡션을 다듬고 있습니다"}
                 </p>
-                <p className="text-xs mt-1">약 5~10초 소요됩니다</p>
+                <p className="text-xs mt-1">
+                  보통 10초 안팎이에요 · {elapsed}초 경과
+                </p>
+                <div className="w-48 h-1 bg-border rounded-full mt-4 overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full transition-all duration-1000 ease-linear"
+                    style={{ width: `${Math.min((elapsed / 10) * 100, 95)}%` }}
+                  />
+                </div>
               </div>
             )}
 
