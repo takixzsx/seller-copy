@@ -79,30 +79,81 @@ const COPY_SCHEMA = {
 
 export const maxDuration = 60;
 
-const ipRequestCounts = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 10;
-const RATE_WINDOW = 60 * 1000;
+/**
+ * 비용 방어 3단.
+ *
+ * 주의: Vercel 서버리스는 인스턴스마다 메모리가 따로이고 콜드스타트로 초기화되므로
+ * 아래 카운터는 "완벽한 상한"이 아니라 "우발적·소규모 남용을 막는 최소 방어"다.
+ * 진짜 상한은 Anthropic 콘솔의 월 지출 한도(spend limit)로 걸어야 한다.
+ */
+const PER_MIN_LIMIT = 5; // IP당 분당
+const PER_DAY_LIMIT = 10; // IP당 일일 (UI는 3회지만 공용 IP 고려해 여유)
+const GLOBAL_DAY_LIMIT = 300; // 인스턴스당 일일 총량 (폭주 차단용 서킷 브레이커)
 
-function checkRateLimit(ip: string): boolean {
+const minuteCounts = new Map<string, { count: number; resetAt: number }>();
+const dayCounts = new Map<string, { count: number; day: string }>();
+let globalDay = "";
+let globalCount = 0;
+
+function today(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+type LimitResult = { ok: true } | { ok: false; reason: "rate" | "daily" | "global" };
+
+function checkLimits(ip: string): LimitResult {
   const now = Date.now();
-  const entry = ipRequestCounts.get(ip);
+  const day = today();
 
-  if (!entry || now > entry.resetAt) {
-    ipRequestCounts.set(ip, { count: 1, resetAt: now + RATE_WINDOW });
-    return true;
+  // 전역 일일 상한
+  if (globalDay !== day) {
+    globalDay = day;
+    globalCount = 0;
+    // 날짜가 바뀌면 IP별 일일 카운터도 정리해 메모리 누수를 막는다.
+    dayCounts.clear();
+  }
+  if (globalCount >= GLOBAL_DAY_LIMIT) return { ok: false, reason: "global" };
+
+  // IP별 분당
+  const m = minuteCounts.get(ip);
+  if (!m || now > m.resetAt) {
+    minuteCounts.set(ip, { count: 1, resetAt: now + 60 * 1000 });
+  } else if (m.count >= PER_MIN_LIMIT) {
+    return { ok: false, reason: "rate" };
+  } else {
+    m.count++;
   }
 
-  if (entry.count >= RATE_LIMIT) return false;
-  entry.count++;
-  return true;
+  // IP별 일일
+  const d = dayCounts.get(ip);
+  if (!d || d.day !== day) {
+    dayCounts.set(ip, { count: 1, day });
+  } else if (d.count >= PER_DAY_LIMIT) {
+    return { ok: false, reason: "daily" };
+  } else {
+    d.count++;
+  }
+
+  globalCount++;
+  return { ok: true };
 }
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
 
-  if (!checkRateLimit(ip)) {
+  const limit = checkLimits(ip);
+  if (!limit.ok) {
+    console.log(
+      JSON.stringify({ event: "rate_limited", reason: limit.reason, at: new Date().toISOString() })
+    );
+    const message =
+      limit.reason === "global"
+        ? "오늘 무료 생성이 모두 소진됐습니다. 내일 다시 이용해주세요."
+        : limit.reason === "daily"
+          ? "오늘 사용 가능한 횟수를 모두 쓰셨습니다. 내일 다시 이용해주세요."
+          : "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.";
     return NextResponse.json(
-      { error: "요청이 너무 많습니다. 잠시 후 다시 시도해주세요." },
+      { error: message },
       { status: 429 }
     );
   }
@@ -179,17 +230,28 @@ async function callClaude(
   });
 
   if (!response.ok) {
-    const err = await response.json();
+    // 업스트림 오류 원문(모델명·내부 사유)을 사용자에게 그대로 노출하지 않는다.
+    const err = await response.json().catch(() => null);
+    console.error("anthropic error:", response.status, JSON.stringify(err));
     return NextResponse.json(
-      {
-        error:
-          err.error?.message || "AI API 호출에 실패했습니다.",
-      },
+      { error: "AI 생성에 실패했습니다. 잠시 후 다시 시도해주세요." },
       { status: 500 }
     );
   }
 
   const data = await response.json();
+
+  // 실제 토큰 사용량을 남겨 비용을 추적한다.
+  if (data.usage) {
+    console.log(
+      JSON.stringify({
+        event: "generation_usage",
+        input_tokens: data.usage.input_tokens,
+        output_tokens: data.usage.output_tokens,
+        at: new Date().toISOString(),
+      })
+    );
+  }
 
   if (data.stop_reason === "max_tokens") {
     return NextResponse.json(
@@ -237,9 +299,10 @@ async function callOpenAI(
   });
 
   if (!response.ok) {
-    const err = await response.json();
+    const err = await response.json().catch(() => null);
+    console.error("openai error:", response.status, JSON.stringify(err));
     return NextResponse.json(
-      { error: err.error?.message || "AI API 호출에 실패했습니다." },
+      { error: "AI 생성에 실패했습니다. 잠시 후 다시 시도해주세요." },
       { status: 500 }
     );
   }
