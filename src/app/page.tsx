@@ -1,3 +1,5 @@
+import PricingPlans from "@/components/PricingPlans";
+
 const FEATURES = [
   {
     icon: "📝",
@@ -30,6 +32,7 @@ const PLANS = [
     features: ["일 3회 생성", "3종 카피 모두 이용", "기본 톤 설정"],
     cta: "무료로 시작하기",
     highlight: false,
+    href: "/generate",
   },
   {
     name: "프로",
@@ -205,46 +208,7 @@ export default function LandingPage() {
           <p className="text-muted text-center mb-12">
             무료로 시작하고, 필요할 때 업그레이드하세요.
           </p>
-          <div className="grid md:grid-cols-3 gap-6">
-            {PLANS.map((p) => (
-              <div
-                key={p.name}
-                className={`rounded-xl p-6 border ${
-                  p.highlight
-                    ? "border-primary bg-white shadow-lg ring-2 ring-primary/20"
-                    : "border-border bg-white"
-                }`}
-              >
-                {p.highlight && (
-                  <span className="inline-block text-xs font-bold text-white bg-primary px-3 py-1 rounded-full mb-4">
-                    인기
-                  </span>
-                )}
-                <h3 className="font-bold text-lg mb-1">{p.name}</h3>
-                <div className="mb-4">
-                  <span className="text-3xl font-extrabold">{p.price}</span>
-                  <span className="text-muted text-sm">{p.period}</span>
-                </div>
-                <ul className="space-y-2 mb-6">
-                  {p.features.map((feat) => (
-                    <li key={feat} className="flex items-start gap-2 text-sm">
-                      <span className="text-primary mt-0.5">&#10003;</span>
-                      {feat}
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  className={`w-full py-2.5 rounded-lg font-semibold text-sm transition ${
-                    p.highlight
-                      ? "bg-primary text-white hover:bg-primary-dark"
-                      : "border border-border hover:bg-card"
-                  }`}
-                >
-                  {p.cta}
-                </button>
-              </div>
-            ))}
-          </div>
+          <PricingPlans plans={PLANS} />
         </div>
       </section>
 
