@@ -33,7 +33,34 @@ function buildSystemPrompt(tone: string) {
 }`;
 }
 
+const ipRequestCounts = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 10;
+const RATE_WINDOW = 60 * 1000;
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = ipRequestCounts.get(ip);
+
+  if (!entry || now > entry.resetAt) {
+    ipRequestCounts.set(ip, { count: 1, resetAt: now + RATE_WINDOW });
+    return true;
+  }
+
+  if (entry.count >= RATE_LIMIT) return false;
+  entry.count++;
+  return true;
+}
+
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
+
+  if (!checkRateLimit(ip)) {
+    return NextResponse.json(
+      { error: "요청이 너무 많습니다. 잠시 후 다시 시도해주세요." },
+      { status: 429 }
+    );
+  }
+
   try {
     const { productName, category, features, target, tone } = await req.json();
 
@@ -44,56 +71,121 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (productName.length > 100 || features.length > 1000 || target.length > 200) {
+      return NextResponse.json(
+        { error: "입력이 너무 깁니다." },
+        { status: 400 }
+      );
+    }
+
     const userPrompt = `상품명: ${productName}
 카테고리: ${category}
 핵심 특징:
 ${features}
 타겟 고객: ${target}`;
 
-    const apiKey = process.env.OPENAI_API_KEY;
+    const systemPrompt = buildSystemPrompt(tone || "friendly");
 
-    if (!apiKey) {
-      return NextResponse.json(
-        getDemoResponse(productName, category, features, target, tone)
-      );
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
+    const openaiKey = process.env.OPENAI_API_KEY;
+
+    if (anthropicKey) {
+      return await callClaude(anthropicKey, systemPrompt, userPrompt);
     }
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: buildSystemPrompt(tone || "friendly") },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.8,
-        max_tokens: 2000,
-      }),
-    });
-
-    if (!response.ok) {
-      const err = await response.json();
-      return NextResponse.json(
-        { error: err.error?.message || "AI API 호출에 실패했습니다." },
-        { status: 500 }
-      );
+    if (openaiKey) {
+      return await callOpenAI(openaiKey, systemPrompt, userPrompt);
     }
 
-    const data = await response.json();
-    const content = data.choices[0].message.content;
-    const parsed = JSON.parse(content);
-
-    return NextResponse.json(parsed);
+    return NextResponse.json(
+      getDemoResponse(productName, category, features, target, tone)
+    );
   } catch {
     return NextResponse.json(
       { error: "카피 생성 중 오류가 발생했습니다." },
       { status: 500 }
     );
   }
+}
+
+async function callClaude(
+  apiKey: string,
+  systemPrompt: string,
+  userPrompt: string
+) {
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 2000,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userPrompt }],
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json();
+    return NextResponse.json(
+      {
+        error:
+          err.error?.message || "AI API 호출에 실패했습니다.",
+      },
+      { status: 500 }
+    );
+  }
+
+  const data = await response.json();
+  const text = data.content[0].text;
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    return NextResponse.json(
+      { error: "AI 응답을 파싱할 수 없습니다." },
+      { status: 500 }
+    );
+  }
+  const parsed = JSON.parse(jsonMatch[0]);
+  return NextResponse.json(parsed);
+}
+
+async function callOpenAI(
+  apiKey: string,
+  systemPrompt: string,
+  userPrompt: string
+) {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.8,
+      max_tokens: 2000,
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json();
+    return NextResponse.json(
+      { error: err.error?.message || "AI API 호출에 실패했습니다." },
+      { status: 500 }
+    );
+  }
+
+  const data = await response.json();
+  const content = data.choices[0].message.content;
+  const parsed = JSON.parse(content);
+  return NextResponse.json(parsed);
 }
 
 function getDemoResponse(
