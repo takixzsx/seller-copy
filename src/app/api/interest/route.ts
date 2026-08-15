@@ -13,7 +13,7 @@ const VALID_PLANS = ["프로", "비즈니스"];
  */
 export async function POST(req: NextRequest) {
   try {
-    const { plan } = await req.json();
+    const { plan, source } = await req.json();
 
     if (typeof plan !== "string" || !VALID_PLANS.includes(plan)) {
       return NextResponse.json({ ok: false }, { status: 400 });
@@ -24,6 +24,8 @@ export async function POST(req: NextRequest) {
       JSON.stringify({
         event: "plan_interest",
         plan,
+        // utm_source(어느 커뮤니티에서 왔는지). 길이를 잘라 로그 오염을 막는다.
+        source: typeof source === "string" ? source.slice(0, 50) : null,
         at: new Date().toISOString(),
         referer: req.headers.get("referer") ?? null,
       })
