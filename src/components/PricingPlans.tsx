@@ -18,11 +18,13 @@ export default function PricingPlans({ plans }: { plans: Plan[] }) {
 
   function handlePaidClick(planName: string) {
     setOpenPlan(planName);
+    // 어느 채널에서 유입됐는지(?utm_source=...) 같이 기록한다.
+    const source = new URLSearchParams(window.location.search).get("utm_source");
     // 관심 신호 기록. 실패해도 사용자 경험을 막지 않는다.
     void fetch("/api/interest", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan: planName }),
+      body: JSON.stringify({ plan: planName, source }),
       keepalive: true,
     }).catch(() => {});
   }
