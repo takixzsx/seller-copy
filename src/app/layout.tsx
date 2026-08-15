@@ -13,7 +13,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "셀러카피 — AI 마케팅 카피 생성기",
+  title: {
+    default: "셀러카피 — AI 마케팅 카피 생성기",
+    template: "%s | 셀러카피",
+  },
   description:
     "스마트스토어, 쿠팡, 11번가 셀러를 위한 AI 마케팅 카피 생성기. 상세페이지 카피, 블로그 리뷰, 인스타 캡션을 원클릭으로.",
   keywords: [
@@ -23,7 +26,23 @@ export const metadata: Metadata = {
     "스마트스토어",
     "쿠팡",
     "상세페이지",
+    "셀러카피",
+    "상품 카피",
+    "네이버 SEO",
   ],
+  openGraph: {
+    title: "셀러카피 — AI 마케팅 카피 생성기",
+    description:
+      "상품 정보만 넣으면 상세페이지 카피, 블로그 리뷰, 인스타 캡션이 완성됩니다.",
+    type: "website",
+    locale: "ko_KR",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "셀러카피 — AI 마케팅 카피 생성기",
+    description:
+      "상품 정보만 넣으면 상세페이지 카피, 블로그 리뷰, 인스타 캡션이 완성됩니다.",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
