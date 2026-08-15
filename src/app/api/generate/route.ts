@@ -33,6 +33,51 @@ function buildSystemPrompt(tone: string) {
 }`;
 }
 
+const COPY_SCHEMA = {
+  type: "object",
+  properties: {
+    detailPage: {
+      type: "object",
+      properties: {
+        title: { type: "string", description: "후킹 제목 (호기심 유발, 1줄)" },
+        body: {
+          type: "string",
+          description:
+            "상세페이지 판매 본문 (3~5단락, 각 단락은 줄바꿈으로 구분, 고객의 고민→해결→증거→혜택 구조)",
+        },
+        cta: { type: "string", description: "구매 유도 문구 (1줄)" },
+      },
+      required: ["title", "body", "cta"],
+      additionalProperties: false,
+    },
+    blogReview: {
+      type: "string",
+      description:
+        "네이버 블로그 체험 리뷰 형식 글 (자연스러운 후기 톤, SEO 키워드 자연 삽입, 500자 내외)",
+    },
+    instagram: {
+      type: "object",
+      properties: {
+        caption: {
+          type: "string",
+          description: "인스타그램/릴스 캡션 (감성적 톤, 이모지 포함, 3~5줄)",
+        },
+        hashtags: {
+          type: "array",
+          items: { type: "string" },
+          description: "해시태그 최대 15개, 각 항목은 # 로 시작",
+        },
+      },
+      required: ["caption", "hashtags"],
+      additionalProperties: false,
+    },
+  },
+  required: ["detailPage", "blogReview", "instagram"],
+  additionalProperties: false,
+} as const;
+
+export const maxDuration = 60;
+
 const ipRequestCounts = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 10;
 const RATE_WINDOW = 60 * 1000;
@@ -100,7 +145,8 @@ ${features}
     return NextResponse.json(
       getDemoResponse(productName, category, features, target, tone)
     );
-  } catch {
+  } catch (err) {
+    console.error("generate failed:", err);
     return NextResponse.json(
       { error: "카피 생성 중 오류가 발생했습니다." },
       { status: 500 }
@@ -122,9 +168,12 @@ async function callClaude(
     },
     body: JSON.stringify({
       model: "claude-haiku-4-5",
-      max_tokens: 2000,
+      max_tokens: 4000,
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
+      output_config: {
+        format: { type: "json_schema", schema: COPY_SCHEMA },
+      },
     }),
   });
 
@@ -140,16 +189,27 @@ async function callClaude(
   }
 
   const data = await response.json();
-  const text = data.content[0].text;
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
+
+  if (data.stop_reason === "max_tokens") {
+    return NextResponse.json(
+      { error: "카피가 너무 길어 생성이 중단되었습니다. 특징을 줄여 다시 시도해주세요." },
+      { status: 500 }
+    );
+  }
+
+  const text = data.content?.find(
+    (b: { type: string }) => b.type === "text"
+  )?.text;
+
+  if (!text) {
     return NextResponse.json(
       { error: "AI 응답을 파싱할 수 없습니다." },
       { status: 500 }
     );
   }
-  const parsed = JSON.parse(jsonMatch[0]);
-  return NextResponse.json(parsed);
+
+  // output_config.format이 스키마에 맞는 JSON을 보장하므로 그대로 파싱한다.
+  return NextResponse.json(JSON.parse(text));
 }
 
 async function callOpenAI(
@@ -170,7 +230,8 @@ async function callOpenAI(
         { role: "user", content: userPrompt },
       ],
       temperature: 0.8,
-      max_tokens: 2000,
+      max_tokens: 4000,
+      response_format: { type: "json_object" },
     }),
   });
 
