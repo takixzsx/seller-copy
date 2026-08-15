@@ -122,8 +122,62 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Demo Preview */}
+      <section className="py-20 px-4">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-4">
+            이런 카피가 나옵니다
+          </h2>
+          <p className="text-muted text-center mb-10 max-w-xl mx-auto">
+            &ldquo;프리미엄 세라마이드 수분크림&rdquo;으로 생성한 실제 예시입니다.
+          </p>
+          <div className="grid md:grid-cols-3 gap-5">
+            <div className="border border-border rounded-xl p-5">
+              <span className="text-xs font-semibold text-muted tracking-wide">상세페이지</span>
+              <h4 className="font-bold text-primary mt-2 mb-3 leading-snug">
+                아직도 수분크림에서 고민하세요? 이 제품 하나로 끝내세요
+              </h4>
+              <p className="text-sm text-gray-600 leading-relaxed line-clamp-4">
+                건조한 피부 고민이라면 한 번쯤 이런 고민 해보셨을 거예요. &ldquo;좋은 수분크림 없을까?&rdquo; 세라마이드 5종 함유, 48시간 보습 지속까지 갖춘 제품이에요.
+              </p>
+              <span className="inline-block mt-3 text-xs text-primary font-medium">+ 더 보기</span>
+            </div>
+            <div className="border border-border rounded-xl p-5">
+              <span className="text-xs font-semibold text-muted tracking-wide">블로그 리뷰</span>
+              <p className="text-sm text-gray-600 leading-relaxed mt-2 line-clamp-6">
+                안녕하세요~ 오늘은 요즘 핫한 뷰티 아이템, 프리미엄 세라마이드 수분크림 솔직 후기 들고 왔어요! 사실 저도 처음엔 반신반의했거든요. 근데 써보고 깜짝 놀랐어요 ㅎㅎ 일단 세라마이드 5종 함유가 확실히 느껴지더라구요.
+              </p>
+              <span className="inline-block mt-3 text-xs text-primary font-medium">+ 더 보기</span>
+            </div>
+            <div className="border border-border rounded-xl p-5">
+              <span className="text-xs font-semibold text-muted tracking-wide">인스타그램</span>
+              <p className="text-sm text-gray-600 leading-relaxed mt-2 mb-3">
+                &#10024; 드디어 찾았다, 인생 뷰티 아이템<br />
+                써보고 완전 반해버림 &#129401;<br />
+                세라마이드 덕분에 매일이 달라졌어요
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {["#수분크림추천", "#세라마이드", "#솔직후기", "#인생템"].map((tag) => (
+                  <span key={tag} className="text-xs bg-blue-50 text-primary px-2 py-0.5 rounded-full">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="text-center mt-10">
+            <a
+              href="/generate"
+              className="inline-block px-8 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition"
+            >
+              내 상품으로 직접 만들어보기
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* How it works */}
-      <section id="how" className="py-20 px-4">
+      <section id="how" className="bg-card py-20 px-4">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-center mb-12">
             3단계로 끝
@@ -143,7 +197,7 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="bg-card py-20 px-4">
+      <section id="pricing" className="py-20 px-4">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-center mb-4">
             요금제
