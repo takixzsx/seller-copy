@@ -30,6 +30,15 @@ interface GeneratedCopy {
   instagram: { caption: string; hashtags: string[] };
 }
 
+interface HistoryItem {
+  id: string;
+  productName: string;
+  category: string;
+  tone: string;
+  result: GeneratedCopy;
+  createdAt: string;
+}
+
 function getTodayKey() {
   return `sellercopy_usage_${new Date().toISOString().slice(0, 10)}`;
 }
@@ -43,6 +52,22 @@ function incrementUsage() {
   const key = getTodayKey();
   const current = parseInt(localStorage.getItem(key) || "0", 10);
   localStorage.setItem(key, String(current + 1));
+}
+
+function getHistory(): HistoryItem[] {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(localStorage.getItem("sellercopy_history") || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function saveToHistory(item: HistoryItem) {
+  const history = getHistory();
+  history.unshift(item);
+  if (history.length > 20) history.length = 20;
+  localStorage.setItem("sellercopy_history", JSON.stringify(history));
 }
 
 export default function GeneratePage() {
@@ -61,9 +86,12 @@ export default function GeneratePage() {
   const [activeTab, setActiveTab] = useState<"detail" | "blog" | "insta">(
     "detail"
   );
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     setUsageCount(getUsageCount());
+    setHistory(getHistory());
   }, []);
 
   const remaining = FREE_LIMIT - usageCount;
@@ -75,19 +103,17 @@ export default function GeneratePage() {
     form.target.trim() &&
     remaining > 0;
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!canSubmit) return;
-
+  async function generate(formData: typeof form) {
     setLoading(true);
     setError("");
     setResult(null);
+    setShowHistory(false);
 
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(formData),
       });
 
       if (!res.ok) {
@@ -95,16 +121,39 @@ export default function GeneratePage() {
         throw new Error(data.error || "생성에 실패했습니다.");
       }
 
-      const data = await res.json();
+      const data: GeneratedCopy = await res.json();
       setResult(data);
       setActiveTab("detail");
       incrementUsage();
       setUsageCount(getUsageCount());
+
+      const historyItem: HistoryItem = {
+        id: Date.now().toString(),
+        productName: formData.productName,
+        category: formData.category,
+        tone: formData.tone,
+        result: data,
+        createdAt: new Date().toLocaleString("ko-KR"),
+      };
+      saveToHistory(historyItem);
+      setHistory(getHistory());
     } catch (err) {
       setError(err instanceof Error ? err.message : "알 수 없는 오류");
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!canSubmit) return;
+    await generate(form);
+  }
+
+  function loadHistoryItem(item: HistoryItem) {
+    setResult(item.result);
+    setActiveTab("detail");
+    setShowHistory(false);
   }
 
   const copyToClipboard = useCallback((text: string, label: string) => {
@@ -121,9 +170,17 @@ export default function GeneratePage() {
           <a href="/" className="text-lg font-bold text-primary">
             셀러카피
           </a>
-          <div className="flex items-center gap-3 text-sm">
+          <div className="flex items-center gap-4 text-sm">
+            {history.length > 0 && (
+              <button
+                onClick={() => setShowHistory(!showHistory)}
+                className="text-muted hover:text-foreground transition"
+              >
+                히스토리 ({history.length})
+              </button>
+            )}
             <span className="text-muted">
-              오늘 남은 횟수{" "}
+              오늘{" "}
               <span
                 className={`font-bold ${remaining > 0 ? "text-primary" : "text-red-500"}`}
               >
@@ -135,6 +192,40 @@ export default function GeneratePage() {
       </nav>
 
       <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* History Panel */}
+        {showHistory && (
+          <div className="mb-6 border border-border rounded-xl overflow-hidden">
+            <div className="bg-card px-4 py-3 border-b border-border flex items-center justify-between">
+              <span className="text-sm font-semibold">생성 히스토리</span>
+              <button
+                onClick={() => setShowHistory(false)}
+                className="text-muted hover:text-foreground text-sm"
+              >
+                닫기
+              </button>
+            </div>
+            <div className="divide-y divide-border max-h-[300px] overflow-y-auto">
+              {history.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => loadHistoryItem(item)}
+                  className="w-full px-4 py-3 text-left hover:bg-card transition flex items-center justify-between"
+                >
+                  <div>
+                    <span className="text-sm font-medium">
+                      {item.productName}
+                    </span>
+                    <span className="text-xs text-muted ml-2">
+                      {item.category}
+                    </span>
+                  </div>
+                  <span className="text-xs text-muted">{item.createdAt}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="grid lg:grid-cols-[380px_1fr] gap-8">
           {/* Input Form */}
           <div>
@@ -290,27 +381,51 @@ export default function GeneratePage() {
 
             {result && (
               <div>
-                {/* Tabs */}
-                <div className="flex border-b border-border mb-5">
-                  {(
-                    [
-                      { key: "detail", label: "상세페이지" },
-                      { key: "blog", label: "블로그 리뷰" },
-                      { key: "insta", label: "인스타그램" },
-                    ] as const
-                  ).map((tab) => (
+                {/* Tabs + Regenerate */}
+                <div className="flex items-center justify-between border-b border-border mb-5">
+                  <div className="flex">
+                    {(
+                      [
+                        { key: "detail", label: "상세페이지" },
+                        { key: "blog", label: "블로그 리뷰" },
+                        { key: "insta", label: "인스타그램" },
+                      ] as const
+                    ).map((tab) => (
+                      <button
+                        key={tab.key}
+                        onClick={() => setActiveTab(tab.key)}
+                        className={`px-4 py-2.5 text-sm font-medium border-b-2 transition -mb-px ${
+                          activeTab === tab.key
+                            ? "border-primary text-primary"
+                            : "border-transparent text-muted hover:text-foreground"
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                  {remaining > 0 && (
                     <button
-                      key={tab.key}
-                      onClick={() => setActiveTab(tab.key)}
-                      className={`px-4 py-2.5 text-sm font-medium border-b-2 transition -mb-px ${
-                        activeTab === tab.key
-                          ? "border-primary text-primary"
-                          : "border-transparent text-muted hover:text-foreground"
-                      }`}
+                      onClick={() => generate(form)}
+                      disabled={loading || !canSubmit}
+                      className="text-xs text-muted hover:text-primary transition flex items-center gap-1 mb-px disabled:opacity-50"
                     >
-                      {tab.label}
+                      <svg
+                        className="w-3.5 h-3.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
+                      </svg>
+                      다시 생성
                     </button>
-                  ))}
+                  )}
                 </div>
 
                 {/* Detail Page Copy */}
