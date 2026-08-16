@@ -1,59 +1,10 @@
-"""게시물 2 — 규칙 카드 캐러셀 (2장, 1080x1350 세로형).
+"""게시물 2 — 규칙 카드 캐러셀 (2장, 1080x1350 세로형)."""
 
-세로 4:5 비율을 쓰는 이유: 인스타 피드에서 정사각형보다 화면을
-더 많이 차지해서 스크롤 중 눈에 잘 띈다(현재 권장 비율).
-"""
-
-from PIL import Image, ImageDraw, ImageFont
-
-W, H = 1080, 1350
-BLUE = (37, 99, 235)
-INK = (17, 17, 17)
-MUTED = (107, 114, 128)
-BG = (247, 248, 250)
-WHITE = (255, 255, 255)
-KR = "/System/Library/Fonts/AppleSDGothicNeo.ttc"
-OUT = "/Users/min/seller-copy/products/brand"
-
-
-def kr(size: int, bold=True) -> ImageFont.FreeTypeFont:
-    return ImageFont.truetype(KR, size, index=6 if bold else 2)
-
-
-def tracked(draw, cx, cy, text, f, fill, tracking=0, anchor="mm"):
-    widths = [draw.textlength(ch, font=f) for ch in text]
-    total = sum(widths) + tracking * (len(text) - 1)
-    x = cx - total / 2 if "m" in anchor[0] else cx
-    for ch, w in zip(text, widths):
-        draw.text((x + w / 2, cy), ch, font=f, fill=fill, anchor="mm")
-        x += w + tracking
-
-
-def wrap_by_width(draw, text, f, max_width):
-    """어절 단위로 픽셀 폭에 맞춰 줄바꿈."""
-    words = text.split(" ")
-    lines, cur = [], ""
-    for w in words:
-        trial = f"{cur} {w}".strip()
-        if draw.textlength(trial, font=f) <= max_width:
-            cur = trial
-        else:
-            if cur:
-                lines.append(cur)
-            cur = w
-    if cur:
-        lines.append(cur)
-    return lines
-
-
-def chip(draw, x, y, text, f):
-    pad_x, pad_y = 24, 14
-    tw = draw.textlength(text, font=f)
-    th = f.size
-    draw.rounded_rectangle(
-        [x, y, x + tw + pad_x * 2, y + th + pad_y * 2], radius=999, fill=BLUE
-    )
-    draw.text((x + pad_x, y + pad_y + th / 2), text, font=f, fill=WHITE, anchor="lm")
+from PIL import Image, ImageDraw
+from brand_kit import (
+    W, H, BLUE, LIGHT_BLUE, INK, MUTED, BG, WHITE,
+    kr, tracked, chip, takeaway_bar, page_dots, save_set,
+)
 
 
 def slide_1() -> Image.Image:
@@ -69,20 +20,16 @@ def slide_1() -> Image.Image:
         d.text((80, y), line, font=title_f, fill=INK, anchor="lm")
         y += 108
 
-    sub_f = kr(38, bold=False)
     d.text(
-        (80, y + 60),
+        (80, y + 50),
         "안 붙이면 AI가 수치를 지어냅니다",
-        font=sub_f,
+        font=kr(38, bold=False),
         fill=MUTED,
         anchor="lm",
     )
 
-    # 하단 페이지 인디케이터
-    d.ellipse([W / 2 - 46, H - 90, W / 2 - 14, H - 58], fill=BLUE)
-    d.ellipse([W / 2 + 14, H - 90, W / 2 + 46, H - 58], fill=(209, 213, 219))
-    d.text((W - 80, H - 74), "1/2", font=kr(30, bold=False), fill=MUTED, anchor="rm")
-
+    takeaway_bar(d, 1010, "이 4줄, 상세페이지 허위광고를 막아줍니다", bg=BLUE, fg=WHITE)
+    page_dots(d, 1, 2)
     return img
 
 
@@ -99,37 +46,21 @@ def slide_2() -> Image.Image:
         ("4", '"최고" "1위" "유일한"은', "근거 없으면 쓰지 마세요"),
     ]
 
-    y = 260
+    y = 250
     num_f = kr(56)
     line_f = kr(40)
     for num, l1, l2 in rules:
         d.rounded_rectangle([80, y, 168, y + 88], radius=20, fill=WHITE)
         d.text((124, y + 44), num, font=num_f, fill=BLUE, anchor="mm")
         d.text((196, y + 20), l1, font=line_f, fill=WHITE, anchor="lm")
-        d.text((196, y + 66), l2, font=line_f, fill=(191, 219, 254), anchor="lm")
-        y += 132
+        d.text((196, y + 66), l2, font=line_f, fill=LIGHT_BLUE, anchor="lm")
+        y += 126
 
-    d.text(
-        (80, y + 40),
-        "4개 톤 6회 재검증, 수치 왜곡 0건",
-        font=kr(32, bold=False),
-        fill=(191, 219, 254),
-        anchor="lm",
-    )
-
-    d.ellipse([W / 2 - 46, H - 90, W / 2 - 14, H - 58], fill=(191, 219, 254))
-    d.ellipse([W / 2 + 14, H - 90, W / 2 + 46, H - 58], fill=WHITE)
-    d.text((W - 80, H - 74), "2/2", font=kr(30, bold=False), fill=(191, 219, 254), anchor="rm")
-
+    takeaway_bar(d, y + 30, "4개 톤 6회 재검증, 수치 왜곡 0건", bg=WHITE, fg=BLUE)
+    page_dots(d, 2, 2, active=WHITE, inactive=(59, 130, 246), text_color=WHITE)
     return img
 
 
 if __name__ == "__main__":
-    slide_1().save(f"{OUT}/rulecard_1.png")
-    slide_2().save(f"{OUT}/rulecard_2.png")
-
-    sheet = Image.new("RGB", (2200, 1350), (255, 255, 255))
-    sheet.paste(Image.open(f"{OUT}/rulecard_1.png"), (20, 0))
-    sheet.paste(Image.open(f"{OUT}/rulecard_2.png"), (1100, 0))
-    sheet.save(f"{OUT}/rulecard_sheet.png")
+    save_set("rulecard", [slide_1(), slide_2()])
     print("saved")
