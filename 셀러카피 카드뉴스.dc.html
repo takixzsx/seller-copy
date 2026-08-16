@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #e5e7eb; font-family: "Noto Sans KR", "Apple SD Gothic Neo", sans-serif; }
+</style>
+</helmet>
+<div style="display:flex; gap:40px; padding:40px; overflow-x:auto; align-items:flex-start;">
+
+  <!-- Slide 1 -->
+  <div style="position:relative; flex:none; width:1080px; height:1350px; background:#f7f8fa; box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+    <div style="position:absolute; left:80px; top:90px; background:#2563eb; color:#fff; font-weight:700; font-size:34px; padding:14px 24px; border-radius:999px; letter-spacing:-0.5px;">이커머스 셀러 전용</div>
+    <div style="position:absolute; left:80px; top:300px; font-size:84px; font-weight:800; line-height:1.28; letter-spacing:-2px; color:#111111;">
+      <div>상품 정보만 넣으면</div>
+      <div style="color:#2563eb;">판매 카피가 완성됩니다</div>
+    </div>
+    <div style="position:absolute; left:80px; top:700px; font-size:38px; font-weight:400; line-height:1.55; color:#6b7280;">
+      <div>상세페이지, 블로그 리뷰, 인스타 캡션까지</div>
+      <div>3종 마케팅 카피를 몇 초 만에 생성하세요</div>
+    </div>
+    <div style="position:absolute; left:80px; right:80px; bottom:180px; background:#2563eb; border-radius:20px; padding:32px 40px; text-align:center;">
+      <span style="color:#fff; font-size:34px; font-weight:700; letter-spacing:-1px;">매일 3회 무료 생성 · 카드 등록 없이 바로 시작</span>
+    </div>
+    <div style="position:absolute; left:0; right:80px; bottom:60px; display:flex; justify-content:center; align-items:center; gap:12px;">
+      <div style="width:32px; height:16px; border-radius:999px; background:#2563eb;"></div>
+      <div style="width:16px; height:16px; border-radius:999px; background:#d1d5db;"></div>
+      <div style="width:16px; height:16px; border-radius:999px; background:#d1d5db;"></div>
+      <span style="position:absolute; right:0; font-size:30px; font-weight:400; color:#6b7280;">1/3</span>
+    </div>
+  </div>
+
+  <!-- Slide 2 -->
+  <div style="position:relative; flex:none; width:1080px; height:1350px; background:#2563eb; box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+    <div style="position:absolute; left:80px; top:96px; font-size:46px; font-weight:700; color:#fff; letter-spacing:-1px;">원클릭으로 3종 카피 생성</div>
+    <div style="position:absolute; left:80px; top:168px; right:80px; font-size:32px; font-weight:400; color:#bfdbfe; line-height:1.5;">더 이상 카피라이터에게 외주 맡기거나 ChatGPT에 프롬프트 고민할 필요 없습니다</div>
+
+    <div style="position:absolute; left:80px; top:340px; right:80px; display:flex; align-items:flex-start; gap:32px;">
+      <div style="flex:none; width:88px; height:88px; border-radius:20px; background:#fff; display:flex; align-items:center; justify-content:center; font-size:56px; font-weight:800; color:#2563eb;">1</div>
+      <div>
+        <div style="font-size:40px; font-weight:700; color:#fff; margin-bottom:10px;">상세페이지 판매 카피</div>
+        <div style="font-size:32px; font-weight:400; color:#bfdbfe; line-height:1.5;">후킹 제목 + 구매 전환 본문 + CTA까지. 붙여넣기만 하세요.</div>
+      </div>
+    </div>
+
+    <div style="position:absolute; left:80px; top:560px; right:80px; display:flex; align-items:flex-start; gap:32px;">
+      <div style="flex:none; width:88px; height:88px; border-radius:20px; background:#fff; display:flex; align-items:center; justify-content:center; font-size:56px; font-weight:800; color:#2563eb;">2</div>
+      <div>
+        <div style="font-size:40px; font-weight:700; color:#fff; margin-bottom:10px;">블로그 체험 리뷰</div>
+        <div style="font-size:32px; font-weight:400; color:#bfdbfe; line-height:1.5;">네이버 SEO 키워드가 자연스럽게 녹아든 체험 리뷰 형식 글.</div>
+      </div>
+    </div>
+
+    <div style="position:absolute; left:80px; top:780px; right:80px; display:flex; align-items:flex-start; gap:32px;">
+      <div style="flex:none; width:88px; height:88px; border-radius:20px; background:#fff; display:flex; align-items:center; justify-content:center; font-size:56px; font-weight:800; color:#2563eb;">3</div>
+      <div>
+        <div style="font-size:40px; font-weight:700; color:#fff; margin-bottom:10px;">인스타 캡션 + 해시태그</div>
+        <div style="font-size:32px; font-weight:400; color:#bfdbfe; line-height:1.5;">릴스·쇼츠에 바로 쓸 수 있는 캡션과 해시태그 세트.</div>
+      </div>
+    </div>
+
+    <div style="position:absolute; left:80px; right:80px; bottom:180px; background:#fff; border-radius:20px; padding:32px 40px; text-align:center;">
+      <span style="color:#2563eb; font-size:34px; font-weight:700; letter-spacing:-1px;">입력 → 생성 → 붙여넣기, 3단계로 끝</span>
+    </div>
+    <div style="position:absolute; left:0; right:80px; bottom:60px; display:flex; justify-content:center; align-items:center; gap:12px;">
+      <div style="width:16px; height:16px; border-radius:999px; background:#3b82f6;"></div>
+      <div style="width:32px; height:16px; border-radius:999px; background:#fff;"></div>
+      <div style="width:16px; height:16px; border-radius:999px; background:#3b82f6;"></div>
+      <span style="position:absolute; right:0; font-size:30px; font-weight:400; color:#fff;">2/3</span>
+    </div>
+  </div>
+
+  <!-- Slide 3 -->
+  <div style="position:relative; flex:none; width:1080px; height:1350px; background:#f7f8fa; box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+    <div style="position:absolute; left:80px; top:90px; background:#2563eb; color:#fff; font-weight:700; font-size:34px; padding:14px 24px; border-radius:999px; letter-spacing:-0.5px;">무료 배포</div>
+    <div style="position:absolute; left:80px; top:300px; font-size:84px; font-weight:800; line-height:1.28; letter-spacing:-2px; color:#111111;">
+      <div>프롬프트 8개도</div>
+      <div style="color:#2563eb;">전부 무료로 드려요</div>
+    </div>
+    <div style="position:absolute; left:80px; top:700px; right:80px; font-size:38px; font-weight:400; line-height:1.55; color:#6b7280;">
+      <div>상세페이지 · 블로그 체험 리뷰</div>
+      <div>인스타 캡션 · 릴스 대본까지</div>
+      <div style="margin-top:24px;">가입도 이메일도 필요 없습니다. 그냥 복사해서 쓰세요.</div>
+    </div>
+    <div style="position:absolute; left:80px; right:80px; bottom:180px; background:#2563eb; border-radius:20px; padding:32px 40px; text-align:center;">
+      <span style="color:#fff; font-size:34px; font-weight:700; letter-spacing:-1px;">↑ 프로필 링크에서 확인하세요</span>
+    </div>
+    <div style="position:absolute; left:0; right:80px; bottom:60px; display:flex; justify-content:center; align-items:center; gap:12px;">
+      <div style="width:16px; height:16px; border-radius:999px; background:#d1d5db;"></div>
+      <div style="width:16px; height:16px; border-radius:999px; background:#d1d5db;"></div>
+      <div style="width:32px; height:16px; border-radius:999px; background:#2563eb;"></div>
+      <span style="position:absolute; right:0; font-size:30px; font-weight:400; color:#6b7280;">3/3</span>
+    </div>
+  </div>
+
+</div>
+
+</x-dc>
+</body>
+</html>
