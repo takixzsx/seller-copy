@@ -6,9 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "interest": "node --env-file=.env.local scripts/interest-count.mjs"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/blob": "^2.8.0",
     "next": "16.3.1",
     "react": "19.2.8",
     "react-dom": "19.2.8"
